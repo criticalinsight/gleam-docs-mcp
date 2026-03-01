@@ -1,10 +1,10 @@
+import gleam/dynamic.{type Dynamic}
 import gleam/http/request
 import gleam/httpc
 import gleam/json
-import gleam/dynamic.{type Dynamic}
-import gleam/result
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import mcp_toolkit_gleam/core/mcp_ffi
 
 pub type HexPackage {
@@ -31,14 +31,14 @@ pub fn get_package_releases(package_name: String) -> Result(Dynamic, String) {
 
 fn fetch_json(url: String) -> Result(Dynamic, String) {
   use req <- result.try(
-    request.to(url) 
-    |> result.map_error(fn(_) { "Invalid Hex API URL" })
+    request.to(url)
+    |> result.map_error(fn(_) { "Invalid Hex API URL" }),
   )
   let req = request.set_header(req, "user-agent", "native-docs-mcp/0.1.0")
 
   use resp <- result.try(
     httpc.send(req)
-    |> result.map_error(fn(_) { "Failed to connect to Hex.pm" })
+    |> result.map_error(fn(_) { "Failed to connect to Hex.pm" }),
   )
 
   case resp.status {
@@ -60,7 +60,7 @@ fn decode_package(item: Dynamic) -> HexPackage {
   let meta = get_dynamic(item, "meta")
   let description = get_string(meta, "description", "")
   let html_url = get_string(item, "html_url", "")
-  
+
   HexPackage(
     name: name,
     version: get_string(item, "latest_version", "0.0.0"),

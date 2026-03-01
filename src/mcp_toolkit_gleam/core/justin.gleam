@@ -1,5 +1,5 @@
-import gleam/string
 import gleam/list
+import gleam/string
 
 pub fn pascal_case(name: String) -> String {
   name

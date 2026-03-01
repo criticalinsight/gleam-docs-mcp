@@ -1,13 +1,13 @@
+import gleam/dynamic.{type Dynamic}
 import gleam/http/request
 import gleam/httpc
 import gleam/json
-import gleam/string
 import gleam/list
 import gleam/option.{None, Some}
-import gleam/dynamic.{type Dynamic}
 import gleam/result
-import mcp_toolkit_gleam/core/protocol as mcp
+import gleam/string
 import mcp_toolkit_gleam/core/mcp_ffi
+import mcp_toolkit_gleam/core/protocol as mcp
 
 /// Query the Gloogle search engine for Gleam functions by type signature or name.
 pub fn gloogle_search(query: String) -> String {
@@ -18,7 +18,9 @@ pub fn gloogle_search(query: String) -> String {
   }
 }
 
-pub fn gloogle_search_handler(req: mcp.CallToolRequest(Dynamic)) -> Result(mcp.CallToolResult, String) {
+pub fn gloogle_search_handler(
+  req: mcp.CallToolRequest(Dynamic),
+) -> Result(mcp.CallToolResult, String) {
   let query = case req.arguments {
     Some(args) -> get_string(args, "query", "")
     None -> ""
@@ -47,12 +49,26 @@ fn format_results(dyn: Dynamic, query: String) -> String {
           let kind = get_string(item, "kind", "")
           let signature = get_string(item, "type_", "")
           let documentation = get_string(item, "documentation", "")
-          "### " <> name <> "\n"
-          <> "**Package:** " <> package <> " | **Module:** " <> module <> " | **Kind:** " <> kind <> "\n"
-          <> "**Signature:** `" <> signature <> "`\n"
-          <> "**Synopsis:** " <> documentation <> "\n"
+          "### "
+          <> name
+          <> "\n"
+          <> "**Package:** "
+          <> package
+          <> " | **Module:** "
+          <> module
+          <> " | **Kind:** "
+          <> kind
+          <> "\n"
+          <> "**Signature:** `"
+          <> signature
+          <> "`\n"
+          <> "**Synopsis:** "
+          <> documentation
+          <> "\n"
         })
-      "## Gloogle Search Results for \"" <> query <> "\"\n\n"
+      "## Gloogle Search Results for \""
+      <> query
+      <> "\"\n\n"
       <> string.join(formatted, "\n---\n\n")
     }
   }
@@ -61,13 +77,13 @@ fn format_results(dyn: Dynamic, query: String) -> String {
 fn fetch_json(url: String) -> Result(Dynamic, String) {
   use req <- result.try(
     request.to(url)
-    |> result.map_error(fn(_) { "Invalid Gloogle API URL" })
+    |> result.map_error(fn(_) { "Invalid Gloogle API URL" }),
   )
   let req = request.set_header(req, "user-agent", "native-docs-mcp/0.1.0")
 
   use resp <- result.try(
     httpc.send(req)
-    |> result.map_error(fn(_) { "Failed to connect to Gloogle" })
+    |> result.map_error(fn(_) { "Failed to connect to Gloogle" }),
   )
 
   case resp.status {

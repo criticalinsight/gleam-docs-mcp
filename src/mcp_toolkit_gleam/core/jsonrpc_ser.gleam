@@ -14,7 +14,12 @@ pub fn response(result: Json, id: jsonrpc.Id) -> Json {
   ])
 }
 
-pub fn error_response(code: Int, message: String, data: Option(Json), id: jsonrpc.Id) -> Json {
+pub fn error_response(
+  code: Int,
+  message: String,
+  data: Option(Json),
+  id: jsonrpc.Id,
+) -> Json {
   let error_obj = [
     #("code", json.int(code)),
     #("message", json.string(message)),

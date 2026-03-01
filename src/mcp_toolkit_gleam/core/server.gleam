@@ -5,8 +5,8 @@ import gleam/list
 import gleam/result
 import mcp_toolkit_gleam/core/jsonrpc
 import mcp_toolkit_gleam/core/jsonrpc_ser
-import mcp_toolkit_gleam/core/method
 import mcp_toolkit_gleam/core/mcp_ffi
+import mcp_toolkit_gleam/core/method
 
 import gleam/option.{type Option, None, Some}
 
@@ -292,7 +292,7 @@ pub fn handle_message(
       }
     }
     Error(_) -> {
-       Error(json.object([#("error", json.string("Parse error"))]))
+      Error(json.object([#("error", json.string("Parse error"))]))
     }
   }
 }
@@ -310,10 +310,17 @@ fn handle_request(
           initialize(server, req)
           |> result.map(mcp.initialize_result_to_json)
           |> result.map(jsonrpc_ser.response(_, id))
-          |> result.map_error(fn(err_json) { jsonrpc_ser.error_response(-32603, "Internal error", Some(err_json), id) })
+          |> result.map_error(fn(err_json) {
+            jsonrpc_ser.error_response(
+              -32_603,
+              "Internal error",
+              Some(err_json),
+              id,
+            )
+          })
         }
         Error(_) -> {
-          Error(jsonrpc_ser.error_response(-32602, "Invalid params", None, id))
+          Error(jsonrpc_ser.error_response(-32_602, "Invalid params", None, id))
         }
       }
     }
@@ -326,11 +333,13 @@ fn handle_request(
       list_tools(server, mcp.ListRequest(None))
       |> result.map(mcp.list_tools_result_to_json)
       |> result.map(jsonrpc_ser.response(_, id))
-      |> result.map_error(fn(_) { jsonrpc_ser.error_response(-32603, "Internal error", None, id) })
+      |> result.map_error(fn(_) {
+        jsonrpc_ser.error_response(-32_603, "Internal error", None, id)
+      })
     }
 
     _ -> {
-      Error(jsonrpc_ser.error_response(-32601, "Method not found", None, id))
+      Error(jsonrpc_ser.error_response(-32_601, "Method not found", None, id))
     }
   }
 }

@@ -1,6 +1,6 @@
+import gleam/dynamic.{type Dynamic}
 import mcp_toolkit_gleam/core/jsonrpc
 import mcp_toolkit_gleam/core/protocol as mcp
-import gleam/dynamic.{type Dynamic}
 
 // FFI to get gleam@dynamic@decode:identity() which returns a decoder that just returns the Dynamic value
 // This is needed because the current gleam_json parse() requires a decoder.

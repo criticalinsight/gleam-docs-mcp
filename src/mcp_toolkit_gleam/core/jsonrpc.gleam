@@ -23,7 +23,10 @@ pub fn decode_id(data: Dynamic) -> Result(Id, List(DecodeError)) {
     False ->
       case is_integer(data) {
         True -> Ok(IdInt(unsafe_coerce(data)))
-        False -> Error([DecodeError(expected: "String | Int", found: "wrong type", path: [])])
+        False ->
+          Error([
+            DecodeError(expected: "String | Int", found: "wrong type", path: []),
+          ])
       }
   }
 }
@@ -35,7 +38,8 @@ pub fn decode_message(data: Dynamic) -> Result(Message, List(DecodeError)) {
         Ok(method_val) -> {
           case dynamic_string(method_val) {
             Ok(method) -> {
-              let params = erl_get_map_value(data, "params") |> result.unwrap(data)
+              let params =
+                erl_get_map_value(data, "params") |> result.unwrap(data)
               case erl_get_map_value(data, "id") {
                 Ok(id_val) -> {
                   case decode_id(id_val) {
@@ -63,7 +67,9 @@ pub fn decode_message(data: Dynamic) -> Result(Message, List(DecodeError)) {
                             Ok(code) -> {
                               case get_map_string(error_val, "message") {
                                 Ok(message) -> {
-                                  let data_inner = erl_get_map_value(error_val, "data") |> result.unwrap(data)
+                                  let data_inner =
+                                    erl_get_map_value(error_val, "data")
+                                    |> result.unwrap(data)
                                   Ok(RPCError(id, code, message, data_inner))
                                 }
                                 Error(e) -> Error(e)
@@ -72,11 +78,19 @@ pub fn decode_message(data: Dynamic) -> Result(Message, List(DecodeError)) {
                             Error(e) -> Error(e)
                           }
                         }
-                        False -> Error([DecodeError(expected: "Map", found: "wrong type", path: ["error"])])
+                        False ->
+                          Error([
+                            DecodeError(
+                              expected: "Map",
+                              found: "wrong type",
+                              path: ["error"],
+                            ),
+                          ])
                       }
                     }
                     Error(_) -> {
-                      let result_val = erl_get_map_value(data, "result") |> result.unwrap(data)
+                      let result_val =
+                        erl_get_map_value(data, "result") |> result.unwrap(data)
                       Ok(Response(id, result_val))
                     }
                   }
@@ -84,12 +98,20 @@ pub fn decode_message(data: Dynamic) -> Result(Message, List(DecodeError)) {
                 Error(e) -> Error(e)
               }
             }
-            Error(_) -> Error([DecodeError(expected: "Message", found: "missing id and method", path: [])])
+            Error(_) ->
+              Error([
+                DecodeError(
+                  expected: "Message",
+                  found: "missing id and method",
+                  path: [],
+                ),
+              ])
           }
         }
       }
     }
-    False -> Error([DecodeError(expected: "Map", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "Map", found: "wrong type", path: [])])
   }
 }
 
@@ -118,27 +140,31 @@ fn unsafe_coerce(a: any) -> b
 fn dynamic_string(data: Dynamic) -> Result(String, List(DecodeError)) {
   case is_binary(data) {
     True -> Ok(unsafe_coerce(data))
-    False -> Error([DecodeError(expected: "String", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "String", found: "wrong type", path: [])])
   }
 }
 
 fn dynamic_int(data: Dynamic) -> Result(Int, List(DecodeError)) {
   case is_integer(data) {
     True -> Ok(unsafe_coerce(data))
-    False -> Error([DecodeError(expected: "Int", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "Int", found: "wrong type", path: [])])
   }
 }
 
 fn get_map_string(m: Dynamic, k: String) -> Result(String, List(DecodeError)) {
   case erl_get_map_value(m, k) {
     Ok(v) -> dynamic_string(v)
-    Error(_) -> Error([DecodeError(expected: "Key " <> k, found: "missing", path: [])])
+    Error(_) ->
+      Error([DecodeError(expected: "Key " <> k, found: "missing", path: [])])
   }
 }
 
 fn get_map_int(m: Dynamic, k: String) -> Result(Int, List(DecodeError)) {
   case erl_get_map_value(m, k) {
     Ok(v) -> dynamic_int(v)
-    Error(_) -> Error([DecodeError(expected: "Key " <> k, found: "missing", path: [])])
+    Error(_) ->
+      Error([DecodeError(expected: "Key " <> k, found: "missing", path: [])])
   }
 }

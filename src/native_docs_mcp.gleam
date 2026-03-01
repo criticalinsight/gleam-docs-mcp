@@ -1,17 +1,17 @@
 import gleam/io
+import gleam/json
 import gleam/option.{None, Some}
-import mcp_toolkit_gleam/core/server
-import mcp_toolkit_gleam/core/protocol as mcp
 import mcp_toolkit_gleam/core/mcp_ffi
-import tools/hex
+import mcp_toolkit_gleam/core/protocol as mcp
+import mcp_toolkit_gleam/core/server
+import resources/popular_packages
 import tools/diagnostics
 import tools/discovery
-import tools/symbol
 import tools/eval
-import tools/scaffold
 import tools/global
-import resources/popular_packages
-import gleam/json
+import tools/hex
+import tools/scaffold
+import tools/symbol
 
 @external(erlang, "mcp_ffi", "read_line")
 fn erl_read_line() -> Result(String, Nil)
@@ -19,7 +19,9 @@ fn erl_read_line() -> Result(String, Nil)
 pub fn main() {
   let server_builder =
     server.new("native-docs-mcp", "0.1.0")
-    |> server.description("Native Gleam MCP server for Gleam documentation and ecosystem")
+    |> server.description(
+      "Native Gleam MCP server for Gleam documentation and ecosystem",
+    )
 
   let server_builder =
     server_builder
@@ -27,7 +29,7 @@ pub fn main() {
       mcp.Tool(
         name: "get_compiler_diagnostics",
         description: Some("Run gleam check on a local project"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       diagnostics.get_compiler_diagnostics_handler,
@@ -36,7 +38,7 @@ pub fn main() {
       mcp.Tool(
         name: "format_project",
         description: Some("Run gleam format on a local project"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       diagnostics.format_project_handler,
@@ -45,7 +47,7 @@ pub fn main() {
       mcp.Tool(
         name: "list_dependencies",
         description: Some("List dependencies from gleam.toml"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       discovery.list_dependencies_handler,
@@ -54,7 +56,7 @@ pub fn main() {
       mcp.Tool(
         name: "list_local_modules",
         description: Some("List modules in local src directory"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       discovery.list_local_modules_handler,
@@ -62,8 +64,10 @@ pub fn main() {
     |> server.add_tool(
       mcp.Tool(
         name: "scaffold_gleam_module",
-        description: Some("Safely scaffold a new Gleam module in a project's src directory"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        description: Some(
+          "Safely scaffold a new Gleam module in a project's src directory",
+        ),
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       scaffold.scaffold_module_handler,
@@ -72,7 +76,7 @@ pub fn main() {
       mcp.Tool(
         name: "get_symbol_context",
         description: Some("Get source context for a local symbol"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       symbol.get_symbol_context_handler,
@@ -80,8 +84,10 @@ pub fn main() {
     |> server.add_tool(
       mcp.Tool(
         name: "evaluate_snippet",
-        description: Some("Evaluate a Gleam code snippet in a sandboxed environment"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        description: Some(
+          "Evaluate a Gleam code snippet in a sandboxed environment",
+        ),
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       eval.evaluate_snippet_handler,
@@ -89,8 +95,10 @@ pub fn main() {
     |> server.add_tool(
       mcp.Tool(
         name: "gloogle_search",
-        description: Some("Search for Gleam functions by type signature or name via Gloogle"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        description: Some(
+          "Search for Gleam functions by type signature or name via Gloogle",
+        ),
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       global.gloogle_search_handler,
@@ -99,7 +107,7 @@ pub fn main() {
       mcp.Tool(
         name: "search_hex_packages",
         description: Some("Search Hex.pm for Gleam packages"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       hex.search_packages_handler,
@@ -108,7 +116,7 @@ pub fn main() {
       mcp.Tool(
         name: "get_package_releases",
         description: Some("Get releases for a Hex package"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       hex.get_package_releases_handler,
@@ -117,7 +125,7 @@ pub fn main() {
       mcp.Tool(
         name: "search_functions",
         description: Some("Search for functions in a Gleam package"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       hex.search_functions_handler,
@@ -126,7 +134,7 @@ pub fn main() {
       mcp.Tool(
         name: "search_types",
         description: Some("Search for types in a Gleam package"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       hex.search_types_handler,
@@ -135,7 +143,7 @@ pub fn main() {
       mcp.Tool(
         name: "get_modules",
         description: Some("List modules in a Hex package"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       hex.get_modules_handler,
@@ -144,7 +152,7 @@ pub fn main() {
       mcp.Tool(
         name: "get_module_info",
         description: Some("Get detailed documentation for a module"),
-        input_schema: mcp_ffi.unsafe_coerce(None), 
+        input_schema: mcp_ffi.unsafe_coerce(None),
         annotations: None,
       ),
       hex.get_module_info_handler,
@@ -162,10 +170,9 @@ pub fn main() {
     )
 
   let mcp_server = server.build(server_builder)
-  
+
   // Custom simple stdio loop since transport module is incomplete
   loop(mcp_server)
-
 }
 
 fn loop(mcp_server) {

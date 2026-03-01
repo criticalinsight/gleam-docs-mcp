@@ -197,32 +197,36 @@ fn type_to_json(t: Type) -> Json {
   })
 }
 
-pub fn decode_root_schema(data: Dynamic) -> Result(RootSchema, List(DecodeError)) {
+pub fn decode_root_schema(
+  data: Dynamic,
+) -> Result(RootSchema, List(DecodeError)) {
   let definitions_loader = fn() {
     case get_map_value(data, "$defs") {
-       Ok(defs_val) -> {
-         use defs_list <- result.try(map_to_list(defs_val))
-         let results = list.fold(defs_list, Ok([]), fn(acc, pair) {
-           use acc_list <- result.try(acc)
-           use schema <- result.try(decode_schema(pair.1))
-           Ok([#(pair.0, schema), ..acc_list])
-         })
-         results |> result.map(list.reverse)
-       }
-       Error(_) -> {
-         case get_map_value(data, "definitions") {
-           Ok(defs_val) -> {
-             use defs_list <- result.try(map_to_list(defs_val))
-             let results = list.fold(defs_list, Ok([]), fn(acc, pair) {
-               use acc_list <- result.try(acc)
-               use schema <- result.try(decode_schema(pair.1))
-               Ok([#(pair.0, schema), ..acc_list])
-             })
-             results |> result.map(list.reverse)
-           }
-           Error(_) -> Ok([])
-         }
-       }
+      Ok(defs_val) -> {
+        use defs_list <- result.try(map_to_list(defs_val))
+        let results =
+          list.fold(defs_list, Ok([]), fn(acc, pair) {
+            use acc_list <- result.try(acc)
+            use schema <- result.try(decode_schema(pair.1))
+            Ok([#(pair.0, schema), ..acc_list])
+          })
+        results |> result.map(list.reverse)
+      }
+      Error(_) -> {
+        case get_map_value(data, "definitions") {
+          Ok(defs_val) -> {
+            use defs_list <- result.try(map_to_list(defs_val))
+            let results =
+              list.fold(defs_list, Ok([]), fn(acc, pair) {
+                use acc_list <- result.try(acc)
+                use schema <- result.try(decode_schema(pair.1))
+                Ok([#(pair.0, schema), ..acc_list])
+              })
+            results |> result.map(list.reverse)
+          }
+          Error(_) -> Ok([])
+        }
+      }
     }
   }
 
@@ -237,18 +241,29 @@ pub fn decode_schema(data: Dynamic) -> Result(Schema, List(DecodeError)) {
       let decoder =
         key_decoder(data, "enum", decode_enum_local)
         |> result.lazy_or(fn() { key_decoder(data, "$ref", decode_ref_local) })
-        |> result.lazy_or(fn() { key_decoder(data, "items", decode_array_local) })
-        |> result.lazy_or(fn() { key_decoder(data, "properties", decode_object_local) })
-        |> result.lazy_or(fn() { key_decoder(data, "oneOf", decode_one_of_local) })
-        |> result.lazy_or(fn() { key_decoder(data, "anyOf", decode_any_of_local) })
-        |> result.lazy_or(fn() { key_decoder(data, "allOf", decode_all_of_local) })
+        |> result.lazy_or(fn() {
+          key_decoder(data, "items", decode_array_local)
+        })
+        |> result.lazy_or(fn() {
+          key_decoder(data, "properties", decode_object_local)
+        })
+        |> result.lazy_or(fn() {
+          key_decoder(data, "oneOf", decode_one_of_local)
+        })
+        |> result.lazy_or(fn() {
+          key_decoder(data, "anyOf", decode_any_of_local)
+        })
+        |> result.lazy_or(fn() {
+          key_decoder(data, "allOf", decode_all_of_local)
+        })
         |> result.lazy_or(fn() { key_decoder(data, "not", decode_not_local) })
         |> result.lazy_or(fn() { key_decoder(data, "type", decode_type_local) })
         |> result.unwrap(fn() { decode_empty_local(data) })
 
       decoder()
     }
-    False -> Error([DecodeError(expected: "Map", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "Map", found: "wrong type", path: [])])
   }
 }
 
@@ -263,7 +278,10 @@ fn key_decoder(
   }
 }
 
-fn decode_enum_local(variants: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeError)) {
+fn decode_enum_local(
+  variants: Dynamic,
+  data: Dynamic,
+) -> Result(Schema, List(DecodeError)) {
   use nullable <- result.try(get_nullable(data))
   use metadata <- result.try(get_metadata(data))
   case is_list(variants) {
@@ -274,11 +292,15 @@ fn decode_enum_local(variants: Dynamic, data: Dynamic) -> Result(Schema, List(De
         Error(e) -> Error(e) |> push_path("enum")
       }
     }
-    False -> Error([DecodeError(expected: "List", found: "wrong type", path: ["enum"])])
+    False ->
+      Error([DecodeError(expected: "List", found: "wrong type", path: ["enum"])])
   }
 }
 
-fn decode_ref_local(ref: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeError)) {
+fn decode_ref_local(
+  ref: Dynamic,
+  data: Dynamic,
+) -> Result(Schema, List(DecodeError)) {
   use nullable <- result.try(get_nullable(data))
   use metadata <- result.try(get_metadata(data))
   case dynamic_string(ref) {
@@ -287,7 +309,10 @@ fn decode_ref_local(ref: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeEr
   }
 }
 
-fn decode_array_local(items: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeError)) {
+fn decode_array_local(
+  items: Dynamic,
+  data: Dynamic,
+) -> Result(Schema, List(DecodeError)) {
   use nullable <- result.try(get_nullable(data))
   use metadata <- result.try(get_metadata(data))
   case decode_schema(items) {
@@ -296,14 +321,20 @@ fn decode_array_local(items: Dynamic, data: Dynamic) -> Result(Schema, List(Deco
   }
 }
 
-fn decode_object_local(_props: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeError)) {
+fn decode_object_local(
+  _props: Dynamic,
+  data: Dynamic,
+) -> Result(Schema, List(DecodeError)) {
   use nullable <- result.try(get_nullable(data))
   use metadata <- result.try(get_metadata(data))
   decode_object_schema(data)
   |> result.map(Object(nullable, metadata, _))
 }
 
-fn decode_one_of_local(schemas: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeError)) {
+fn decode_one_of_local(
+  schemas: Dynamic,
+  data: Dynamic,
+) -> Result(Schema, List(DecodeError)) {
   use nullable <- result.try(get_nullable(data))
   use metadata <- result.try(get_metadata(data))
   case is_list(schemas) {
@@ -314,11 +345,17 @@ fn decode_one_of_local(schemas: Dynamic, data: Dynamic) -> Result(Schema, List(D
         Error(e) -> Error(e) |> push_path("oneOf")
       }
     }
-    False -> Error([DecodeError(expected: "List", found: "wrong type", path: ["oneOf"])])
+    False ->
+      Error([
+        DecodeError(expected: "List", found: "wrong type", path: ["oneOf"]),
+      ])
   }
 }
 
-fn decode_any_of_local(schemas: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeError)) {
+fn decode_any_of_local(
+  schemas: Dynamic,
+  data: Dynamic,
+) -> Result(Schema, List(DecodeError)) {
   use nullable <- result.try(get_nullable(data))
   use metadata <- result.try(get_metadata(data))
   case is_list(schemas) {
@@ -329,11 +366,17 @@ fn decode_any_of_local(schemas: Dynamic, data: Dynamic) -> Result(Schema, List(D
         Error(e) -> Error(e) |> push_path("anyOf")
       }
     }
-    False -> Error([DecodeError(expected: "List", found: "wrong type", path: ["anyOf"])])
+    False ->
+      Error([
+        DecodeError(expected: "List", found: "wrong type", path: ["anyOf"]),
+      ])
   }
 }
 
-fn decode_all_of_local(schemas: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeError)) {
+fn decode_all_of_local(
+  schemas: Dynamic,
+  data: Dynamic,
+) -> Result(Schema, List(DecodeError)) {
   use nullable <- result.try(get_nullable(data))
   use metadata <- result.try(get_metadata(data))
   case is_list(schemas) {
@@ -344,11 +387,17 @@ fn decode_all_of_local(schemas: Dynamic, data: Dynamic) -> Result(Schema, List(D
         Error(e) -> Error(e) |> push_path("allOf")
       }
     }
-    False -> Error([DecodeError(expected: "List", found: "wrong type", path: ["allOf"])])
+    False ->
+      Error([
+        DecodeError(expected: "List", found: "wrong type", path: ["allOf"]),
+      ])
   }
 }
 
-fn decode_not_local(schema: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeError)) {
+fn decode_not_local(
+  schema: Dynamic,
+  data: Dynamic,
+) -> Result(Schema, List(DecodeError)) {
   use nullable <- result.try(get_nullable(data))
   use metadata <- result.try(get_metadata(data))
   case decode_schema(schema) {
@@ -357,16 +406,19 @@ fn decode_not_local(schema: Dynamic, data: Dynamic) -> Result(Schema, List(Decod
   }
 }
 
-fn decode_type_local(type_val: Dynamic, data: Dynamic) -> Result(Schema, List(DecodeError)) {
+fn decode_type_local(
+  type_val: Dynamic,
+  data: Dynamic,
+) -> Result(Schema, List(DecodeError)) {
   let type_res = case dynamic_string(type_val) {
     Ok(s) -> Ok(s)
     Error(_) -> {
       case is_list(type_val) {
         True -> {
-           case list_to_gleam(type_val) {
-             [t, ..] -> dynamic_string(t)
-             _ -> Ok("object")
-           }
+          case list_to_gleam(type_val) {
+            [t, ..] -> dynamic_string(t)
+            _ -> Ok("object")
+          }
         }
         False -> Ok("object")
       }
@@ -401,11 +453,12 @@ pub fn decode_object_schema(
     case get_map_value(data, name) {
       Ok(inner_val) -> {
         use inner_list <- result.try(map_to_list(inner_val) |> push_path(name))
-        let results = list.fold(inner_list, Ok([]), fn(acc, pair) {
-          use acc_list <- result.try(acc)
-          use schema <- result.try(decode_schema(pair.1))
-          Ok([#(pair.0, schema), ..acc_list])
-        })
+        let results =
+          list.fold(inner_list, Ok([]), fn(acc, pair) {
+            use acc_list <- result.try(acc)
+            use schema <- result.try(decode_schema(pair.1))
+            Ok([#(pair.0, schema), ..acc_list])
+          })
         results |> result.map(list.reverse)
       }
       Error(_) -> Ok([])
@@ -415,13 +468,18 @@ pub fn decode_object_schema(
   let required_field = fn() {
     case get_map_value(data, "required") {
       Ok(r_val) -> {
-         case is_list(r_val) {
-           True -> {
-             let strings = list.map(list_to_gleam(r_val), dynamic_string)
-             result.all(strings) |> push_path("required")
-           }
-           False -> Error([DecodeError(expected: "List", found: "wrong type", path: ["required"])])
-         }
+        case is_list(r_val) {
+          True -> {
+            let strings = list.map(list_to_gleam(r_val), dynamic_string)
+            result.all(strings) |> push_path("required")
+          }
+          False ->
+            Error([
+              DecodeError(expected: "List", found: "wrong type", path: [
+                "required",
+              ]),
+            ])
+        }
       }
       Error(_) -> Ok([])
     }
@@ -445,7 +503,12 @@ pub fn decode_object_schema(
   use additional_properties <- result.try(additional_properties_field())
   use pattern_properties <- result.try(properties_field("patternProperties"))
 
-  Ok(ObjectSchema(properties, required, additional_properties, pattern_properties))
+  Ok(ObjectSchema(
+    properties,
+    required,
+    additional_properties,
+    pattern_properties,
+  ))
 }
 
 fn push_path(
@@ -453,9 +516,7 @@ fn push_path(
   segment: String,
 ) -> Result(t, List(DecodeError)) {
   result.map_error(res, fn(errors) {
-    list.map(errors, fn(e) {
-      DecodeError(..e, path: [segment, ..e.path])
-    })
+    list.map(errors, fn(e) { DecodeError(..e, path: [segment, ..e.path]) })
   })
 }
 
@@ -470,15 +531,12 @@ fn get_metadata(
       "not", "$defs", "definitions", "nullable",
     ])
 
-  let metadata = list.filter(data_list, fn(pair) {
-    !set_contains(ignored_keys, pair.0)
-  })
+  let metadata =
+    list.filter(data_list, fn(pair) { !set_contains(ignored_keys, pair.0) })
   Ok(metadata)
 }
 
-fn get_nullable(
-  data: Dynamic,
-) -> Result(Bool, List(DecodeError)) {
+fn get_nullable(data: Dynamic) -> Result(Bool, List(DecodeError)) {
   case get_map_value(data, "nullable") {
     Ok(val) -> dynamic_bool(val) |> push_path("nullable")
     Error(_) -> {
@@ -488,8 +546,8 @@ fn get_nullable(
             True -> {
               let res = list.map(list_to_gleam(t_val), dynamic_string)
               case result.all(res) {
-                 Ok(s_list) -> Ok(list.contains(s_list, "null"))
-                 _ -> Ok(False)
+                Ok(s_list) -> Ok(list.contains(s_list, "null"))
+                _ -> Ok(False)
               }
             }
             False -> Ok(False)
@@ -559,17 +617,21 @@ fn erl_get_map_value(m: Dynamic, k: String) -> Result(Dynamic, Nil)
 fn get_map_value(m: Dynamic, k: String) -> Result(Dynamic, List(DecodeError)) {
   case erl_get_map_value(m, k) {
     Ok(v) -> Ok(v)
-    Error(_) -> Error([DecodeError(expected: "Key " <> k, found: "missing", path: [])])
+    Error(_) ->
+      Error([DecodeError(expected: "Key " <> k, found: "missing", path: [])])
   }
 }
 
 @external(erlang, "mcp_ffi", "map_to_list")
 fn erl_map_to_list(m: Dynamic) -> List(#(String, Dynamic))
 
-fn map_to_list(m: Dynamic) -> Result(List(#(String, Dynamic)), List(DecodeError)) {
+fn map_to_list(
+  m: Dynamic,
+) -> Result(List(#(String, Dynamic)), List(DecodeError)) {
   case is_map(m) {
     True -> Ok(erl_map_to_list(m))
-    False -> Error([DecodeError(expected: "Map", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "Map", found: "wrong type", path: [])])
   }
 }
 
@@ -580,28 +642,37 @@ fn list_to_gleam(l: Dynamic) -> List(Dynamic)
 fn dynamic_string(data: Dynamic) -> Result(String, List(DecodeError)) {
   case is_binary(data) {
     True -> Ok(unsafe_coerce(data))
-    False -> Error([DecodeError(expected: "String", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "String", found: "wrong type", path: [])])
   }
 }
 
 fn dynamic_int(data: Dynamic) -> Result(Int, List(DecodeError)) {
   case is_integer(data) {
     True -> Ok(unsafe_coerce(data))
-    False -> Error([DecodeError(expected: "Int", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "Int", found: "wrong type", path: [])])
   }
 }
 
 fn dynamic_bool(data: Dynamic) -> Result(Bool, List(DecodeError)) {
   case is_boolean(data) {
     True -> Ok(unsafe_coerce(data))
-    False -> Error([DecodeError(expected: "Bool", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "Bool", found: "wrong type", path: [])])
   }
 }
 
+// Sneaky reuse
+@external(erlang, "mcp_ffi", "list_to_gleam")
 @external(javascript, "../mcp_ffi", "unsafe_coerce")
-@external(erlang, "mcp_ffi", "list_to_gleam") // Sneaky reuse
 fn unsafe_coerce(a: any) -> b
 
 // Fake set helpers
-fn set_from_list(l: List(String)) -> List(String) { l }
-fn set_contains(l: List(String), s: String) -> Bool { list.contains(l, s) }
+fn set_from_list(l: List(String)) -> List(String) {
+  l
+}
+
+fn set_contains(l: List(String), s: String) -> Bool {
+  list.contains(l, s)
+}

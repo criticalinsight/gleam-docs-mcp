@@ -478,10 +478,13 @@ pub fn initialize_result_to_json(r: InitializeResult) -> Json {
   json.object([
     #("protocolVersion", json.string(r.protocol_version)),
     #("capabilities", json.object([])),
-    #("serverInfo", json.object([
-      #("name", json.string(r.server_info.name)),
-      #("version", json.string(r.server_info.version)),
-    ])),
+    #(
+      "serverInfo",
+      json.object([
+        #("name", json.string(r.server_info.name)),
+        #("version", json.string(r.server_info.version)),
+      ]),
+    ),
   ])
 }
 
@@ -494,7 +497,10 @@ pub fn list_tools_result_to_json(r: ListToolsResult) -> Json {
 fn tool_to_json(t: Tool) -> Json {
   json.object([
     #("name", json.string(t.name)),
-    #("description", case t.description { Some(d) -> json.string(d) None -> json.null() }),
+    #("description", case t.description {
+      Some(d) -> json.string(d)
+      None -> json.null()
+    }),
     #("inputSchema", t.input_schema |> unsafe_coerce),
   ])
 }
@@ -516,11 +522,14 @@ fn unsafe_coerce(a: any) -> b
 fn dynamic_string(data: Dynamic) -> Result(String, List(DecodeError)) {
   case is_binary(data) {
     True -> Ok(unsafe_coerce(data))
-    False -> Error([DecodeError(expected: "String", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "String", found: "wrong type", path: [])])
   }
 }
 
-pub fn decode_initialize_request(data: Dynamic) -> Result(InitializeRequest, List(DecodeError)) {
+pub fn decode_initialize_request(
+  data: Dynamic,
+) -> Result(InitializeRequest, List(DecodeError)) {
   case is_map(data) {
     True -> {
       case erl_get_map_value(data, "clientInfo") {
@@ -529,7 +538,11 @@ pub fn decode_initialize_request(data: Dynamic) -> Result(InitializeRequest, Lis
             Ok(client_info) -> {
               case get_map_string(data, "protocolVersion") {
                 Ok(pv) -> {
-                   Ok(InitializeRequest(ClientCapabilities(None, None), client_info, pv))
+                  Ok(InitializeRequest(
+                    ClientCapabilities(None, None),
+                    client_info,
+                    pv,
+                  ))
                 }
                 Error(e) -> Error(e)
               }
@@ -537,14 +550,20 @@ pub fn decode_initialize_request(data: Dynamic) -> Result(InitializeRequest, Lis
             Error(e) -> Error(e)
           }
         }
-        Error(_) -> Error([DecodeError(expected: "clientInfo", found: "missing", path: [])])
+        Error(_) ->
+          Error([
+            DecodeError(expected: "clientInfo", found: "missing", path: []),
+          ])
       }
     }
-    False -> Error([DecodeError(expected: "Map", found: "wrong type", path: [])])
+    False ->
+      Error([DecodeError(expected: "Map", found: "wrong type", path: [])])
   }
 }
 
-fn decode_implementation(data: Dynamic) -> Result(Implementation, List(DecodeError)) {
+fn decode_implementation(
+  data: Dynamic,
+) -> Result(Implementation, List(DecodeError)) {
   case get_map_string(data, "name") {
     Ok(name) -> {
       case get_map_string(data, "version") {
@@ -559,6 +578,7 @@ fn decode_implementation(data: Dynamic) -> Result(Implementation, List(DecodeErr
 fn get_map_string(m: Dynamic, k: String) -> Result(String, List(DecodeError)) {
   case erl_get_map_value(m, k) {
     Ok(v) -> dynamic_string(v)
-    Error(_) -> Error([DecodeError(expected: "Key " <> k, found: "missing", path: [])])
+    Error(_) ->
+      Error([DecodeError(expected: "Key " <> k, found: "missing", path: [])])
   }
 }

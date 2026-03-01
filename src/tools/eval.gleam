@@ -1,12 +1,12 @@
-import gleam/string
-import gleam/list
-import gleam/bool
-import gleam/option.{None, Some}
-import gleam/dynamic.{type Dynamic}
-import mcp_toolkit_gleam/core/protocol as mcp
-import mcp_toolkit_gleam/core/mcp_ffi
-import simplifile
 import filepath
+import gleam/bool
+import gleam/dynamic.{type Dynamic}
+import gleam/list
+import gleam/option.{None, Some}
+import gleam/string
+import mcp_toolkit_gleam/core/mcp_ffi
+import mcp_toolkit_gleam/core/protocol as mcp
+import simplifile
 
 @external(erlang, "cli_ffi", "exec")
 fn exec(command: String) -> String
@@ -14,7 +14,8 @@ fn exec(command: String) -> String
 /// Evaluates a snippet of Gleam code by wrapping it in a main function (if missing),
 /// creating a temporary project, running it, and returning the output.
 pub fn evaluate_snippet(code: String) -> String {
-  let tmp_dir = "/tmp/gleam_eval_" <> string.inspect(simplifile.current_directory()) 
+  let tmp_dir =
+    "/tmp/gleam_eval_" <> string.inspect(simplifile.current_directory())
   // We need a unique-ish ID. For now, just use gleam_eval_temp
   let project_dir = "/tmp/gleam_eval_temp"
 
@@ -23,9 +24,10 @@ pub fn evaluate_snippet(code: String) -> String {
 
   // 2. Create scaffolding
   let _ = exec("mkdir -p " <> project_dir <> "/src")
-  
+
   // 3. Write gleam.toml
-  let toml = "name = \"eval_project\"\nversion = \"0.1.0\"\n\n[dependencies]\ngleam_stdlib = \">= 0.34.0 and < 2.0.0\"\n"
+  let toml =
+    "name = \"eval_project\"\nversion = \"0.1.0\"\n\n[dependencies]\ngleam_stdlib = \">= 0.34.0 and < 2.0.0\"\n"
   let toml_path = filepath.join(project_dir, "gleam.toml")
   let _ = simplifile.write(toml_path, toml)
 
@@ -35,9 +37,21 @@ pub fn evaluate_snippet(code: String) -> String {
     True -> code
     False -> {
       let lines = string.split(code, "\n")
-      let imports = lines |> list.filter(fn(l) { string.starts_with(string.trim(l), "import ") }) |> string.join("\n")
-      let body = lines |> list.filter(fn(l) { bool.negate(string.starts_with(string.trim(l), "import ")) }) |> string.join("\n")
-      "import gleam/io\n" <> imports <> "\n\npub fn main() {\n  " <> body <> "\n}"
+      let imports =
+        lines
+        |> list.filter(fn(l) { string.starts_with(string.trim(l), "import ") })
+        |> string.join("\n")
+      let body =
+        lines
+        |> list.filter(fn(l) {
+          bool.negate(string.starts_with(string.trim(l), "import "))
+        })
+        |> string.join("\n")
+      "import gleam/io\n"
+      <> imports
+      <> "\n\npub fn main() {\n  "
+      <> body
+      <> "\n}"
     }
   }
 
@@ -48,20 +62,26 @@ pub fn evaluate_snippet(code: String) -> String {
   // 6. Run gleam project and capture output
   // We use 2>&1 to grab stdout and stderr, then we clean up the directory
   let output = exec("cd " <> project_dir <> " && gleam run 2>&1")
-  
+
   // 7. Cleanup
   let _ = exec("rm -rf " <> project_dir)
 
   output
 }
 
-pub fn evaluate_snippet_handler(req: mcp.CallToolRequest(Dynamic)) -> Result(mcp.CallToolResult, String) {
+pub fn evaluate_snippet_handler(
+  req: mcp.CallToolRequest(Dynamic),
+) -> Result(mcp.CallToolResult, String) {
   let code = case req.arguments {
     Some(args) -> get_string(args, "code", "")
     None -> ""
   }
   let output = evaluate_snippet(code)
-  Ok(mcp.CallToolResult(meta: None, content: [mcp.TextToolContent(mcp.TextContent(None, "text", output))], is_error: Some(False)))
+  Ok(mcp.CallToolResult(
+    meta: None,
+    content: [mcp.TextToolContent(mcp.TextContent(None, "text", output))],
+    is_error: Some(False),
+  ))
 }
 
 fn get_string(dyn: Dynamic, key: String, default: String) -> String {
